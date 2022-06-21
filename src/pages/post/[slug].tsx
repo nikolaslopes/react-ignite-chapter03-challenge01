@@ -26,9 +26,18 @@ interface PostProps {
   post: Post;
 }
 
-// export default function Post() {
-//   // TODO
-// }
+export default function Post() {
+  return (
+    <div className={styles.postContainer}>
+      <h1>Como utilizar hooks</h1>
+      <p>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</p>
+      <div>
+        <small>data</small>
+        <small>username</small>
+      </div>
+    </div>
+  );
+}
 
 // export const getStaticPaths = async () => {
 //   const prismic = getPrismicClient({});
