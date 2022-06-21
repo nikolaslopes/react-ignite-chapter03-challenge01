@@ -1,5 +1,8 @@
+import { asHTML } from '@prismicio/helpers';
+import { RTNode } from '@prismicio/types';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
+import { RichText } from 'prismic-dom';
 import { FiCalendar, FiClock, FiUser } from 'react-icons/fi';
 import Header from '../../components/Header';
 import { calculateMinutesForReading } from '../../helpers/calculateMinutesForReading';
@@ -33,6 +36,11 @@ interface PostProps {
 
 export default function Post({ post }: PostProps): JSX.Element {
   const router = useRouter();
+
+  if (router.isFallback) {
+    return <div>Carregando...</div>;
+  }
+
   let postFormatted: Post = null;
 
   if (post) {
@@ -46,10 +54,6 @@ export default function Post({ post }: PostProps): JSX.Element {
         content: post.data.content,
       },
     };
-  }
-
-  if (router.isFallback) {
-    return <div>Carregando...</div>;
   }
 
   return (
@@ -66,7 +70,7 @@ export default function Post({ post }: PostProps): JSX.Element {
         <main className={styles.postContent}>
           <article>
             <header>
-              <h1>Criando um app</h1>
+              <h1>{postFormatted.data.title}</h1>
 
               <div className={styles.postInfo}>
                 <time>
@@ -83,16 +87,17 @@ export default function Post({ post }: PostProps): JSX.Element {
                 </small>
               </div>
 
-              {postFormatted.data.content.map(({ heading, body }) => {
-                return (
-                  <section key={heading}>
-                    <h2>{heading}</h2>
-                    {body.map(({ text }, index) => (
-                      <p key={index}>{text}</p>
-                    ))}
-                  </section>
-                );
-              })}
+              {postFormatted.data.content.map(section => (
+                <section>
+                  <h2>{section.heading}</h2>
+                  <div
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{
+                      __html: RichText.asHtml(section.body),
+                    }}
+                  />
+                </section>
+              ))}
             </header>
           </article>
         </main>
@@ -104,47 +109,25 @@ export default function Post({ post }: PostProps): JSX.Element {
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient({});
   const posts = await prismic.getByType('posts', {
-    lang: 'pt-BR',
-  });
-
-  const paths = posts.results.map(post => {
-    return {
-      params: {
-        slug: post.uid,
-      },
-    };
+    pageSize: 10,
   });
 
   return {
-    paths,
+    paths: posts.results.map(post => ({ params: { slug: post.uid } })),
     fallback: true,
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const prismic = getPrismicClient({});
-
   const { slug } = params;
 
+  const prismic = getPrismicClient({});
   const response = await prismic.getByUID('posts', String(slug), {});
-  const post = {
-    uid: response.uid,
-    first_publication_date: response.first_publication_date,
-    data: {
-      title: response.data.title,
-      subtitle: response.data.subtitle,
-      banner: {
-        url: response.data.banner.url,
-      },
-      author: response.data.author,
-      content: response.data.content,
-    },
-  };
 
   return {
     props: {
-      post,
+      post: response,
     },
-    redirect: 60 * 30, // 30 minutes
+    redirect: 60 * 60 * 24, // 24 minutes
   };
 };
