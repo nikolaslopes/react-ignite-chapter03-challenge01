@@ -1,10 +1,7 @@
 import { GetStaticProps } from 'next';
-import { format } from 'date-fns';
 
 import Head from 'next/head';
-import { RichText } from 'prismic-dom';
 import { FiCalendar, FiUser } from 'react-icons/fi';
-import ptBR from 'date-fns/locale/pt-BR';
 import { useState } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
@@ -14,6 +11,7 @@ import { getPrismicClient } from '../services/prismic';
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
 import Post from './post/[slug]';
+import { formatDate } from '../helpers/formatDate';
 
 interface Post {
   uid?: string;
@@ -64,7 +62,8 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
 
                 <div className={styles.postFooter}>
                   <time>
-                    <FiCalendar /> {post.first_publication_date}
+                    <FiCalendar />
+                    {formatDate(post.first_publication_date)}
                   </time>
                   <small>
                     <FiUser /> {post.data.author}
@@ -93,8 +92,6 @@ export const getStaticProps: GetStaticProps = async () => {
   const postsResponse = await prismic.getByType('posts', {
     pageSize: 1,
   });
-
-  console.log(postsResponse?.next_page);
 
   return {
     props: {
