@@ -8,14 +8,15 @@ type Content = {
 export function calculateMinutesForReading(content: Content): string {
   const totalMinutes = content.reduce((total, currentSection) => {
     const headingWords = currentSection.heading?.split(' ').length ?? 0;
-    const bodyWorks = currentSection.body.reduce(
+    const bodyWords = currentSection.body.reduce(
       (totalBodyWords, currentElement) => {
         const elementWords = currentElement.text?.split(' ').length ?? 0;
         return totalBodyWords + elementWords;
       },
       0
     );
-    return total + headingWords + bodyWorks;
+
+    return total + headingWords + bodyWords;
   }, 0);
 
   const minutesForReading = Math.ceil(totalMinutes / 200);

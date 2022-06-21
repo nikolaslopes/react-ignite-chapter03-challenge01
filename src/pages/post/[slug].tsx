@@ -1,13 +1,12 @@
-import { asHTML } from '@prismicio/helpers';
-import { RTNode } from '@prismicio/types';
 import { GetStaticPaths, GetStaticProps } from 'next';
+import { useRouter } from 'next/router';
 import { FiCalendar, FiClock, FiUser } from 'react-icons/fi';
 import Header from '../../components/Header';
+import { calculateMinutesForReading } from '../../helpers/calculateMinutesForReading';
 import { formatDate } from '../../helpers/formatDate';
 
 import { getPrismicClient } from '../../services/prismic';
 
-import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
 
 interface Post {
@@ -21,7 +20,9 @@ interface Post {
     author: string;
     content: {
       heading: string;
-      body: string;
+      body: {
+        text: string;
+      }[];
     }[];
   };
 }
@@ -31,6 +32,7 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps): JSX.Element {
+  const router = useRouter();
   let postFormatted: Post = null;
 
   if (post) {
@@ -41,12 +43,13 @@ export default function Post({ post }: PostProps): JSX.Element {
         title: post.data.title,
         banner: { url: post.data.banner.url },
         author: post.data.author,
-        content: post.data.content.map(section => ({
-          heading: section.heading,
-          body: asHTML(section.body as [RTNode, ...RTNode[]]),
-        })),
+        content: post.data.content,
       },
     };
+  }
+
+  if (router.isFallback) {
+    return <div>Carregando...</div>;
   }
 
   return (
@@ -57,10 +60,7 @@ export default function Post({ post }: PostProps): JSX.Element {
         </div>
 
         <div className={styles.banner}>
-          <img
-            src="https://gmedia.playstation.com/is/image/SIEPDC/horizon-forbidden-west-screenshot-02-disclaimer-02oct20?$native$"
-            alt="Banner"
-          />
+          <img src={postFormatted.data.banner.url} alt="Banner" />
         </div>
 
         <main className={styles.postContent}>
@@ -71,19 +71,28 @@ export default function Post({ post }: PostProps): JSX.Element {
               <div className={styles.postInfo}>
                 <time>
                   <FiCalendar />
-                  {formatDate(post.first_publication_date)}
+                  {postFormatted.first_publication_date}
                 </time>
 
                 <small>
-                  <FiUser /> {post.data.author}
+                  <FiUser /> {postFormatted.data.author}
                 </small>
 
                 <small>
-                  <FiClock /> {123}
+                  <FiClock /> {postFormatted.minutesForReading}
                 </small>
               </div>
 
-              <section />
+              {postFormatted.data.content.map(({ heading, body }) => {
+                return (
+                  <section key={heading}>
+                    <h2>{heading}</h2>
+                    {body.map(({ text }, index) => (
+                      <p key={index}>{text}</p>
+                    ))}
+                  </section>
+                );
+              })}
             </header>
           </article>
         </main>
@@ -95,27 +104,47 @@ export default function Post({ post }: PostProps): JSX.Element {
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient({});
   const posts = await prismic.getByType('posts', {
-    pageSize: 10,
+    lang: 'pt-BR',
+  });
+
+  const paths = posts.results.map(post => {
+    return {
+      params: {
+        slug: post.uid,
+      },
+    };
   });
 
   return {
-    paths: posts.results.map(post => ({ params: { slug: post.uid } })),
+    paths,
     fallback: true,
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const prismic = getPrismicClient({});
+
   const { slug } = params;
 
-  const prismic = getPrismicClient({});
   const response = await prismic.getByUID('posts', String(slug), {});
-
-  console.log(response);
+  const post = {
+    uid: response.uid,
+    first_publication_date: response.first_publication_date,
+    data: {
+      title: response.data.title,
+      subtitle: response.data.subtitle,
+      banner: {
+        url: response.data.banner.url,
+      },
+      author: response.data.author,
+      content: response.data.content,
+    },
+  };
 
   return {
     props: {
-      post: response,
+      post,
     },
-    redirect: 60 * 60 * 24, // 24 minutes
+    redirect: 60 * 30, // 30 minutes
   };
 };
