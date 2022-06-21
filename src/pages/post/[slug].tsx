@@ -28,14 +28,25 @@ interface PostProps {
 
 export default function Post() {
   return (
-    <div className={styles.postContainer}>
-      <h1>Como utilizar hooks</h1>
-      <p>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</p>
-      <div>
-        <small>data</small>
-        <small>username</small>
+    <main className={commonStyles.contentBox}>
+      <div className={styles.postContent}>
+        <h1>Como utilizar hooks</h1>
+        <p>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</p>
+        <div>
+          <small>data</small>
+          <small>username</small>
+        </div>
       </div>
-    </div>
+
+      <div className={styles.postContent}>
+        <h1>Como utilizar hooks</h1>
+        <p>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</p>
+        <div>
+          <small>data</small>
+          <small>username</small>
+        </div>
+      </div>
+    </main>
   );
 }
 

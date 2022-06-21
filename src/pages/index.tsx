@@ -30,9 +30,8 @@ export default function Home() {
   return (
     <main className={commonStyles.mainContainer}>
       <Header />
-      <div className={commonStyles.contentContainer}>
-        <Post />
-      </div>
+
+      <Post />
     </main>
   );
 }
