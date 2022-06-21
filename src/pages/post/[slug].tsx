@@ -46,6 +46,8 @@ export default function Post() {
           <small>username</small>
         </div>
       </div>
+
+      <p>Carregar mais posts</p>
     </main>
   );
 }
