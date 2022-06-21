@@ -6,6 +6,7 @@ import { RichText } from 'prismic-dom';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import ptBR from 'date-fns/locale/pt-BR';
 import { useState } from 'react';
+import Link from 'next/link';
 import Header from '../components/Header';
 
 import { getPrismicClient } from '../services/prismic';
@@ -56,18 +57,21 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
 
         <section className={commonStyles.contentBox}>
           {posts?.map(post => (
-            <div className={styles.postContent} key={post.uid}>
-              <h1>{post.data.title}</h1>
-              <p>{post.data.subtitle}</p>
-              <div className={styles.postFooter}>
-                <time>
-                  <FiCalendar /> {post.first_publication_date}
-                </time>
-                <small>
-                  <FiUser /> {post.data.author}
-                </small>
-              </div>
-            </div>
+            <Link href={`post/${post.uid}`} key={post.uid}>
+              <a className={styles.postContent}>
+                <h1>{post.data.title}</h1>
+                <p>{post.data.subtitle}</p>
+
+                <div className={styles.postFooter}>
+                  <time>
+                    <FiCalendar /> {post.first_publication_date}
+                  </time>
+                  <small>
+                    <FiUser /> {post.data.author}
+                  </small>
+                </div>
+              </a>
+            </Link>
           ))}
 
           {nextPage && (
