@@ -52,16 +52,32 @@ export default function Post() {
   );
 }
 
-// export const getStaticPaths = async () => {
-//   const prismic = getPrismicClient({});
-//   const posts = await prismic.getByType(TODO);
+export const getStaticPaths: GetStaticPaths = async () => {
+  return {
+    paths: [],
+    fallback: 'blocking',
+  };
 
-//   // TODO
-// };
+  const prismic = getPrismicClient({});
+  const posts = await prismic.getByType(TODO);
 
-// export const getStaticProps = async ({params }) => {
-//   const prismic = getPrismicClient({});
-//   const response = await prismic.getByUID(TODO);
+  // TODO
+};
 
-//   // TODO
-// };
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const { slug } = params;
+
+  const prismic = getPrismicClient({});
+  const response = await prismic.getByUID('post', String(slug), {});
+
+  const post = {
+    slug: response.uid,
+  };
+
+  return {
+    props: {
+      post,
+    },
+    redirect: 60 * 30, // 30 minutes
+  };
+};

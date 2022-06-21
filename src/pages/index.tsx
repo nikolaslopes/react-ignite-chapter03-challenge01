@@ -1,6 +1,11 @@
 import { GetStaticProps } from 'next';
-import { FiCalendar } from 'react-icons/fi';
-import { FiUser } from 'react-icons/fi';
+import { format } from 'date-fns';
+
+import Head from 'next/head';
+import { RichText } from 'prismic-dom';
+import { FiCalendar, FiUser } from 'react-icons/fi';
+import ptBR from 'date-fns/locale/pt-BR';
+import { useState } from 'react';
 import Header from '../components/Header';
 
 import { getPrismicClient } from '../services/prismic';
@@ -28,37 +33,70 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home() {
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
+  const [posts, setPosts] = useState<Post[]>(postsPagination?.results);
+  const [nextPage, setNextPage] = useState(postsPagination?.next_page);
+
+  const handleLoadMorePosts = async (): Promise<void> => {
+    const response = await fetch(nextPage);
+    const data = await response.json();
+
+    setPosts([...posts, ...data.results]);
+    setNextPage(data.next_page);
+  };
+
   return (
     <>
+      <Head>
+        <title>Posts | spacetraveling</title>
+      </Head>
+
       <main className={commonStyles.mainContainer}>
         <Header />
-        <section className={commonStyles.contentBox}>
-          <div className={styles.postContent}>
-            <h1>Como utilizar hooks</h1>
-            <p>Pensando em sincronização em vez de ciclos de vida.</p>
-            <div className={styles.postFooter}>
-              <time>
-                <FiCalendar /> 15 Mar 2021
-              </time>
-              <small>
-                <FiUser /> Nikolas Lopes
-              </small>
-            </div>
-          </div>
 
-          <footer className={styles.pageAction}>
-            <button type="button">Carregar mais posts</button>
-          </footer>
+        <section className={commonStyles.contentBox}>
+          {posts?.map(post => (
+            <div className={styles.postContent} key={post.uid}>
+              <h1>{post.data.title}</h1>
+              <p>{post.data.subtitle}</p>
+              <div className={styles.postFooter}>
+                <time>
+                  <FiCalendar /> {post.first_publication_date}
+                </time>
+                <small>
+                  <FiUser /> {post.data.author}
+                </small>
+              </div>
+            </div>
+          ))}
+
+          {nextPage && (
+            <footer className={styles.pageAction}>
+              <button type="button" onClick={handleLoadMorePosts}>
+                Carregar mais posts
+              </button>
+            </footer>
+          )}
         </section>
       </main>
     </>
   );
 }
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient({});
-//   // const postsResponse = await prismic.getByType(TODO);
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient({});
 
-//   // TODO
-// };
+  const postsResponse = await prismic.getByType('posts', {
+    pageSize: 1,
+  });
+
+  console.log(postsResponse?.next_page);
+
+  return {
+    props: {
+      postsPagination: postsResponse,
+    },
+
+    revalidate: 60 * 60, // 1 hour
+  };
+};
